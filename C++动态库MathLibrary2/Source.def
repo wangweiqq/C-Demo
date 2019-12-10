@@ -1,0 +1,4 @@
+LIBRARY MathLibrary2
+EXPORTS
+nMathLibrary2 @1
+fnMathLibrary2 @2
