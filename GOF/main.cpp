@@ -5,36 +5,10 @@
 #include <functional>
 #include <thread>
 #include "ThreadPool.h"
-/**
-单实例
-*/
-template<typename T>
-class Singleton {
-public:
-	template<typename ...Arg>
-	static T* Instance(Arg&&... arg) {
-		if (m_pInstance == nullptr) {
-			m_pInstance = new T(std::forward<Arg>(arg)...);
-		}
-		return m_pInstance;
-	}
-	static T* GetInstance() {
-		if (m_pInstance == nullptr) {
-			throw new std::logic_error("没有被初始化");
-		}
-		return m_pInstance;
-	}
-	static void DestroyInstance() {
-		delete m_pInstance;
-		m_pInstance = nullptr;
-	}
-private:
-	Singleton() = default;
-	Singleton(const Singleton&) = delete;
-	Singleton& operator =(const Singleton&) = delete;
-	static T* m_pInstance;
-};
-template<typename T> T* Singleton<T>::m_pInstance = nullptr;
+#include "Singleton.h"
+#include "Event.h"
+#include "CommCommand.h"
+#include "Visitor.h"
 struct A {
 	A() {
 		std::cout << "A构造" << std::endl;
@@ -49,49 +23,7 @@ struct A {
 		std::cout << "A构造右值:" << str << std::endl;
 	}
 };
-/**
-观察者模式
-*/
-class NonCopyable {
-protected:
-	NonCopyable() = default;
-	~NonCopyable() = default;
-	NonCopyable(const NonCopyable&) = delete;
-	NonCopyable& operator=(const NonCopyable&) = delete;
-};
-template<typename Func>
-class Event :NonCopyable {
-public:
-	Event() {}
-	~Event() {}
-	//注册观察者,返回Key值
-	int Connect(Func&& f) {
-		return Assign(f);
-	}
-	int Connect(const Func& f) {
-		return Assign(f);
-	}
-	//移除观察者
-	void Disconnect(int key) {
-		m_connections.erase(key);
-	}
-	//通知所有观察者
-	template<typename... Args>
-	void Notify(Args&&... args) {
-		for (auto& it : m_connections) {
-			it.second(std::forward<Args>(args)...);
-		}
-	}
-private:
-	template<typename F>
-	int Assign(F&& f) {
-		int key = m_observerId++;
-		m_connections.emplace(key,std::forward<F>(f));
-		return key;
-	}
-	int m_observerId = 0;
-	std::map<int, Func> m_connections;
-};
+
 struct StA {
 	int a, b;
 	void print(int a, int b) {
@@ -101,64 +33,8 @@ struct StA {
 void print(int a, int b) {
 	std::cout << "::print:(" << a << "," << b << ")" << std::endl;
 }
-/**
-访问者模式
-*/
-template<typename... Types>
-struct Visitor;
-template<typename T>
-struct Visitor<T> {
-	virtual void Visit(const T&) = 0;
-};
-template<typename T,typename... Types>
-struct Visitor<T, Types...> :Visitor<Types...> {
-	using Visitor<Types...>::Visit;
-	virtual void Visit(const T&) = 0;
-};
-struct stB;
-struct stC;
-struct Base {
-	typedef Visitor<stB, stC> MyVisitor;
-	virtual void Accept(MyVisitor&) = 0;
-};
-struct stB :Base {
-	double val;
-	void Accept(MyVisitor& v) {
-		v.Visit(*this);
-	}
-};
-struct stC :Base {
-	int val;
-	void Accept(MyVisitor& v) {
-		v.Visit(*this);
-	}
-};
-struct PrintVisitor :Base::MyVisitor {
-	void Visit(const stB& b) {
-		std::cout << "from B:" << b.val << std::endl;
-	}
-	void Visit(const stC& c) {
-		std::cout << "from C:" << c.val << std::endl;
-	}
-};
-/**
-命令模式
-*/
-template<typename Receiver>
-class SimpleCommand {
-public:
-	typedef void (Receiver::* Action)();
-	SimpleCommand(Receiver* r, Action a) {
-		_receiver = r;
-		_action = a;
-	}
-	virtual void Execute() {
-		(_receiver->*_action)();
-	}
-private:
-	Action _action;
-	Receiver* _receiver;
-};
+
+
 class MyClass {
 public:
 	void Func() {
@@ -173,27 +49,7 @@ public:
 		return a;
 	}
 };
-template<typename R = void>
-struct CommCommand {
-private:
-	std::function<R()> m_f;
-public:
-	template<typename F,typename... Args, typename = typename std::enable_if<!std::is_member_function_pointer<F>::value >::type >
-	void Wrap(F&& f, Args&&... args) {
-		m_f = [&]() {return  f(std::forward<Args>(args)...); };
-	}
-	template<typename C,typename P,typename... Args>
-	void Wrap(R(C::*f)(Args...), P&& p, Args&&... args) {
-		m_f = [&,f]() {return (p->*f)(args...); };
-	}
-	template<typename C,typename P,typename...Args>
-	void Wrap(R(C::*f)(Args...)const, P&& p, Args&&...args) {
-		m_f = [&p,&args...,f]() {return (p->*f)(args...); };
-	}
-	R Excecute() {
-		return m_f();
-	}
-};
+
 int add_one(int n) {
 	std::cout << "add_one:" << n << std::endl;
 	return n;

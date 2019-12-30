@@ -113,7 +113,11 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CommCommand.h" />
+    <ClInclude Include="Event.h" />
+    <ClInclude Include="Singleton.h" />
     <ClInclude Include="ThreadPool.h" />
+    <ClInclude Include="Visitor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
