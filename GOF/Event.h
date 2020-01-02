@@ -16,9 +16,9 @@ public:
 	Event() {}
 	~Event() {}
 	//注册观察者,返回Key值
-	int Connect(Func&& f) {
-		return Assign(f);
-	}
+	//int Connect(Func&& f) {
+	//	return Assign(f);
+	//}
 	int Connect(const Func& f) {
 		return Assign(f);
 	}

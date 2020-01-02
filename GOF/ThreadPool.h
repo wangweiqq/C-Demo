@@ -19,9 +19,9 @@ public:
 	void Put(const T& x){
 		Add(x);
 	}
-	void Put(T&& x) {
-		Add(std::forward<T>(x));
-	}
+	//void Put(T&& x) {
+	//	Add(std::forward<T>(x));
+	//}
 	/**
 	ÒÆ³ý
 	*/
@@ -122,9 +122,9 @@ public:
 	void AddTask(const Task& t) {
 		m_queue.Put(t);
 	}
-	void AddTask(Task&& t) {
-		m_queue.Put(t);
-	}
+	//void AddTask(Task&& t) {
+	//	m_queue.Put(t);
+	//}
 private:
 	void Start(int numThread) {
 		m_running = true;

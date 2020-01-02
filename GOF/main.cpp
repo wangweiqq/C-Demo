@@ -9,6 +9,10 @@
 #include "Event.h"
 #include "CommCommand.h"
 #include "Visitor.h"
+#include "IocContainer.hpp"
+#include "function_traits.h"
+#include <sqlite3.h>
+#include <codecvt>
 struct A {
 	A() {
 		std::cout << "A构造" << std::endl;
@@ -54,7 +58,226 @@ int add_one(int n) {
 	std::cout << "add_one:" << n << std::endl;
 	return n;
 }
+template<typename T>
+void PrintT(T& t) {
+	std::cout << "左值" << std::endl;
+}
+template<typename T>
+void PrintT(T&& t) {
+	std::cout << "右值" << std::endl;
+}
+template<typename T>
+void TestForward(T&& v) {
+	PrintT(v);
+	PrintT(std::forward<T>(v));
+	PrintT(std::move(v));
+}
+class IHello {
+public:
+	IHello() {
+		std::cout << "IHello()" << std::endl;
+	}
+	virtual ~IHello() {
+		std::cout << "~IHello()" << std::endl;
+	}
+	virtual void Output(const std::string& str) {
+		std::cout << "IHello::Output " << str << std::endl;
+	}
+};
+class Hello :public IHello {
+public:
+	Hello() {
+		std::cout << "Hello()" << std::endl;
+	}
+	~Hello(){
+		std::cout << "~Hello()" << std::endl;
+	}
+	void Output(const std::string& str)override {
+		std::cout << "Hello::Output " << str << std::endl;
+	}
+};
+class HellProxy :public IHello {
+public:
+	HellProxy(IHello* p) :m_ptr(p) {
+		std::cout << "HellProxy()" << std::endl;
+	}
+	~HellProxy() {
+		delete m_ptr;
+		m_ptr = nullptr;
+		std::cout << "~HellProxy()" << std::endl;
+	}
+	void Output(const std::string& str)final {
+		std::cout << "HellProxy::Output " << std::endl;
+		m_ptr->Output(str);
+	}
+private:
+	IHello* m_ptr;
+};
+struct ICar {
+	virtual ~ICar() {};
+	virtual void test()const = 0;
+};
+struct Bus :ICar {
+	Bus() {}
+	~Bus() {
+	
+	}
+	void test()const {
+		std::cout << "Bus::test()" << std::endl;
+	}
+};
+struct Car :ICar {
+	Car() {}
+	~Car() {
+	
+	}
+	void test()const {
+		std::cout << "Car::test()" << std::endl;
+	}
+};
+struct Base2 {
+	virtual ~Base2() {}
+	virtual void Func() = 0;
+};
+struct DerivedB :Base2 {
+	void Func()override {
+		std::cout << "DerivedB::Func" << std::endl;
+	}
+};
+struct DerivedC :Base2 {
+	void Func()override {
+		std::cout << "DerivedC::Func" << std::endl;
+	}
+};
+struct DerivedD :Base2 {
+	void Func()override {
+		std::cout << "DerivedD::Func" << std::endl;
+	}
+};
+struct AB {
+	AB(Base2* ptr):m_ptr(ptr) {}
+	~AB() {
+		delete m_ptr;
+		m_ptr = nullptr;
+	}
+	void Func() {
+		m_ptr->Func();
+	}
+private:
+	Base2* m_ptr;
+};
+template<typename T>
+void PrintType() {
+	std::cout << typeid(T).name() << std::endl;
+}
+float free_function(const std::string& a, int b) {
+	return (float)a.size() / b;
+}
 int main() {
+	sqlite3* conn = nullptr;
+	int result = sqlite3_open("D:\\Test\\C-Demo\\test.db", &conn);
+	const char* createTableSql = "create table if not exists PersonTable(ID INTEGER NOT NULL,Name Text,Address BLOB);";
+	int ret = sqlite3_exec(conn, createTableSql, nullptr, nullptr, nullptr);
+
+	const char* sqlinsert = "insert into PersonTable(ID,Name,Address) values(?,?,?);";
+	int id = 2;
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+	std::wstring name = L"这是一个宽字符串";
+	//std::string name = converter.to_bytes(L"这是一个宽字符串");
+	//std::wstring name = converter.from_bytes(www);
+	std::wstring city = L"苏州";
+
+	sqlite3_stmt* stmt2 = nullptr;
+	sqlite3_prepare_v2(conn, sqlinsert, strlen(sqlinsert), &stmt2, nullptr);
+
+	sqlite3_bind_int(stmt2, 1, id);
+	sqlite3_bind_text16(stmt2, 2, name.data(), -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text16(stmt2, 3, city.c_str(), -1, SQLITE_TRANSIENT);
+	sqlite3_step(stmt2);
+	sqlite3_reset(stmt2);
+	//sqlite3_finalize(stmt2);
+	//stmt2 = nullptr;
+	//const char* sqlselect = "select * from PersonTable where Name=?;";
+	const char* sqlselect = "select * from PersonTable;";
+	sqlite3_prepare_v2(conn, sqlselect, strlen(sqlselect), &stmt2, nullptr);
+	//std::wstring param = L"姓名1";
+	//sqlite3_bind_text16(stmt2, 1, param.c_str(), param.length() * sizeof(wchar_t), SQLITE_TRANSIENT);
+	int count = sqlite3_column_count(stmt2);
+	while (true) {
+		int ret = sqlite3_step(stmt2);
+		if (ret == SQLITE_DONE || ret != SQLITE_ROW) {
+			break;
+		}
+		for (int c = 0; c < count; ++c) {
+			int coltype = sqlite3_column_type(stmt2, c);
+			switch (coltype)
+			{
+			case SQLITE_INTEGER:
+			{
+				int val = sqlite3_column_int(stmt2, c);
+				std::cout << "int : " << val << " ";
+			}
+				break;
+			case SQLITE_FLOAT:
+			{
+				double val = sqlite3_column_double(stmt2, c);
+				std::cout << "float : " << val << " ";
+			}
+				break;
+			case SQLITE_TEXT:
+			{
+				std::wstring val = (wchar_t*)sqlite3_column_text16(stmt2, c);
+				std::wcout.imbue(std::locale("chs"));
+				std::wcout << L"text : " << val.c_str() << " ";
+				//std::cout << "text : " << val << " ";
+			}
+				break;
+			case SQLITE_BLOB:
+			{
+				std::wstring val = (wchar_t*)sqlite3_column_text16(stmt2, c);
+				std::wcout << L"blob : " << val << " ";
+				//std::cout << "blob : ";
+			}
+				break;
+			case SQLITE_NULL:
+				std::cout << "null : ";
+				break;
+			}
+		}
+		std::cout << std::endl;
+	}
+	sqlite3_finalize(stmt2);
+	sqlite3_close(conn); 
+
+
+
+	std::function<int(int)> f111 = [](int a) {return a; };
+	PrintType<function_traits<std::function<int(int)>>::function_type>();
+	PrintType<function_traits<decltype(f111)>::function_type>();
+	PrintType<function_traits<decltype(free_function)>::function_type>();
+
+
+	IocContainer ioc;
+	ioc.RegisterType<Base2, DerivedB>("B");
+	ioc.RegisterSimple<DerivedC>("C");
+	ioc.RegisterType<AB, DerivedD>("D");
+	auto pa = ioc.Resolve<Base2>("B");
+	pa->Func();
+	auto pa1 = ioc.Resolve<DerivedC>("C");
+	pa1->Func();
+	auto pa2 = ioc.Resolve<AB>("D");
+	pa2->Func();
+
+	std::shared_ptr<HellProxy> hello = std::make_shared<HellProxy>(new Hello());
+	hello->Output("It is a Test");
+	hello.reset();
+
+	TestForward(1);
+	int x = 1;
+	TestForward(x);
+	TestForward(std::forward<int>(x));
+
+
 	int cccc = std::thread::hardware_concurrency();
 
 	ThreadPool pool(2);
@@ -74,9 +297,9 @@ int main() {
 			});
 		}
 	});
-	std::this_thread::sleep_for(std::chrono::seconds(10));
 	thr1.join();
 	thr2.join();
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 	pool.Stop();
 
 	MyClass my;
