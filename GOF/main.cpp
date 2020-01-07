@@ -13,6 +13,22 @@
 #include "function_traits.h"
 #include <sqlite3.h>
 #include <codecvt>
+#include <boost/range.hpp>
+#include <boost/range/adaptors.hpp>
+#include <boost/date_time.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/timer.hpp>
+//#include <boost/date_time/gregorian/gregorian.hpp>
+#include "LinqObject.h"
+#include <iterator>
+#include <utility>
+#include "basic_ptimer.h"
+#ifdef _DEBUG
+#pragma comment(lib,"libboost_regex-vc140-mt-gd-x64-1_72.lib")
+#else
+#pragma comment(lib,"libboost_regex-vc140-mt-x64-1_72.lib")
+#endif // DEBUG
+
 struct A {
 	A() {
 		std::cout << "A¹¹Ôì" << std::endl;
@@ -174,6 +190,68 @@ float free_function(const std::string& a, int b) {
 	return (float)a.size() / b;
 }
 int main() {
+
+
+
+
+	return 0;
+	ptimer ttttt;
+	sptimer ttttt1;
+	boost::timer tttttt2;
+	std::cout << "C++ : " << __cplusplus << std::endl;
+	std::vector<int> v = { 1,2,3,4 };	
+	auto rv = from(v).select([](auto i) {return i + 2; }).where([](auto i) {return i > 2; }).max();
+	std::cout << rv << std::endl;
+	std::cout << boost::gregorian::day_clock::local_day() << std::endl;
+	std::cout << boost::gregorian::day_clock::universal_day() << std::endl;
+	boost::gregorian::date d1(boost::gregorian::neg_infin);
+	boost::gregorian::date d2(boost::gregorian::pos_infin);
+	boost::gregorian::date d3(boost::gregorian::not_a_date_time);
+	boost::gregorian::date d4(boost::gregorian::max_date_time);
+	boost::gregorian::date d5(boost::gregorian::min_date_time);
+	std::cout << d1 << std::endl;
+	std::cout << d2 << std::endl;
+	std::cout << d3 << std::endl;
+	std::cout << d4 << std::endl;
+	std::cout << d5 << std::endl;
+	try {
+		boost::gregorian::date d6(1399, 12, 1);
+	}
+	catch (std::exception& ex) {
+		std::cout << ex.what() << std::endl;
+	}
+	boost::gregorian::date d7(2020, 1, 1);
+	boost::gregorian::date d8 = d7.end_of_month();
+	std::cout << boost::gregorian::to_iso_extended_string(d8) << std::endl;
+	boost::posix_time::ptime t1 = boost::posix_time::second_clock::local_time();
+	boost::posix_time::ptime t2 = boost::posix_time::microsec_clock::universal_time();
+	std::cout << t1 << std::endl;
+	std::cout << t2 << std::endl;
+	boost::posix_time::ptime t3(boost::gregorian::date(2020, 1, 10), boost::posix_time::hours(12)+boost::posix_time::minutes(30) + boost::posix_time::seconds(30));
+	std::cout << t3 << std::endl;
+	std::tm tm1 = boost::posix_time::to_tm(t3);
+	std::cout << tttttt2.elapsed() << std::endl;;
+	//boost::gregorian::days
+	//for (auto it = rv.begin(); it != rv.end(); ++it) {
+	//	std::cout << *it << ",";
+	//}
+	//int intarr[] = { 1,2,3,4 };
+	//auto range = boost::make_iterator_range(intarr);
+	//for (auto item : range) {
+	//	std::cout << item << ",";
+	//}
+	//std::cout << std::endl;
+	//auto rg = boost::adaptors::filter(range, [](auto i) {return i % 2 == 0; });
+	//for (auto item : rg) {
+	//	std::cout << item << ",";
+	//}
+	//std::cout << std::endl;
+	//auto rg2 = boost::adaptors::transform(range, [](auto i) {return i += 2; });
+	//for (auto item : rg2) {
+	//	std::cout << item << ",";
+	//}
+	//std::cout << std::endl;
+	return 0;
 	sqlite3* conn = nullptr;
 	int result = sqlite3_open("D:\\Test\\C-Demo\\test.db", &conn);
 	const char* createTableSql = "create table if not exists PersonTable(ID INTEGER NOT NULL,Name Text,Address BLOB);";
