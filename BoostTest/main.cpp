@@ -73,18 +73,42 @@ private:
 	int x;
 };
 int main() {
+	std::locale global(std::locale(""));
 	boost::property_tree::ptree pt;
 	boost::property_tree::read_xml("conf.xml",pt);
+
+	std::string gui1 = pt.get<std::string>("conf.gui.<xmlattr>.id");
+	auto ppp  = pt.get_child("conf.gui.<xmlattr>");
+	//std::string gui2 = ppp.get_optional<std::string>("<xmlattr>.id").get();
+	////if (gui2) {
+	//	std::cout << gui2 << std::endl;
+	////}
+	//auto gui3 = ppp.get_value_optional<std::string>("<xmlattr>");
+	for (auto it = ppp.begin(); it != ppp.end(); ++it) {
+		std::cout << "Key:"<<it->first.data()<<",Value = "<<it->second.data() << std::endl;
+	}
+
 	std::string xmlstr1 = pt.get<std::string>("conf.theme");
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
 	std::wstring ssss = convert.from_bytes(xmlstr1);
+	//std::wstring ssss = convert.to_bytes(xmlstr1);
 	std::wcout.imbue(std::locale("chs"));
 	std::wcout << ssss << std::endl;
 
-	auto child = pt.get_child("conf.urls");
+	auto& child = pt.get_child("conf.urls");
 	for (auto it = child.begin(); it != child.end(); ++it) {
-		std::cout << it->second.data() << std::endl;
+		std::cout << "Key:"<<it->first.data()<<",Value:"<<it->second.data() << std::endl;
+		//it->second.p
 	}
+
+	auto& urlnew = child.add("url", "http://www.url4.com");
+	urlnew.add("<xmlattr>.id", 666);
+	std::wstring ttt = L"ÖÐÎÄ";
+	std::string txt = convert.to_bytes(ttt);
+	urlnew.add("<xmlattr>.type", txt);
+	boost::property_tree::write_xml("conf2.xml", pt);
+
+
 
 	return 0;
 	boost::dynamic_bitset<> db2(0x16, BOOST_BINARY(10101));

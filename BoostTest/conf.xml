@@ -1,5 +1,5 @@
 <conf>
-  <gui>1</gui>
+  <gui id="wangwei" Name="9999">1</gui>
   <theme>自定义</theme>
   <urls>
     <url>http://www.url1.com</url>
