@@ -11,9 +11,15 @@
 #include <boost\dynamic_bitset.hpp>
 #include <boost\property_tree\ptree.hpp>
 #include <boost\property_tree\xml_parser.hpp>
+#include <boost\filesystem.hpp>
 #include <vector>
 #include <list>
 #include <codecvt>
+#ifdef _DEBUG
+#pragma comment(lib,"libboost_filesystem-vc140-mt-gd-x64-1_72.lib")
+#else
+#pragma comment(lib,"libboost_filesystem-vc140-mt-x64-1_72.lib")
+#endif
 /**
 1、boost::less_than_comparable 要求实现<号，自动实现>,<=,>=
 2、boost::equality_comparable 要求实现=号，自动实现!=
@@ -74,6 +80,19 @@ private:
 };
 int main() {
 	std::locale global(std::locale(""));
+	boost::filesystem::path p(R"(D:\Test\C-Demo\BoostTest/test.txt)");
+	//boost::filesystem::path p("./test.txt");
+	std::cout<<"1," << p.string() << std::endl;
+	std::cout << "2," << p.parent_path() << std::endl;
+	std::cout << "3," << p.stem() << std::endl;
+	std::cout << "4," << p.filename() << std::endl;
+	std::cout << "5," << p.extension() << std::endl;
+	std::cout << "6," << p.relative_path() << std::endl;
+	std::cout << "7," << p.root_name() << std::endl;
+	std::cout << "8," << p.root_directory() << std::endl;
+	std::cout << "9," << p.root_path() << std::endl;
+
+	return 0;
 	boost::property_tree::ptree pt;
 	boost::property_tree::read_xml("conf.xml",pt);
 
