@@ -78,7 +78,49 @@ private:
 private:
 	int x;
 };
+class MyRValue {
+public:
+	MyRValue(char* _str) {
+		str = new char[strlen(_str) + 1];
+		std::copy(_str, _str + strlen(_str)+1, str);
+	}
+	~MyRValue() {
+		delete[] str;
+	}
+	MyRValue(const MyRValue& t) {
+		delete[] str;
+		str = new char[strlen(t.str) + 1];
+		std::copy(t.str, t.str + strlen(t.str) + 1, str);
+	}
+	MyRValue(MyRValue&& t){
+		delete[] str;
+		str = t.str;
+		t.str = nullptr;
+	}
+private:
+	char* str = nullptr;
+};
+void thread_func(std::vector<int>& v, long& acm, int begin, int end) {
+	acm = 0;
+	for (int i = begin; i < end; ++i) {
+		acm += v[i];
+		v[i] *= 2;
+	}
+}
 int main() {
+	long acm1 = 0, acm2 = 2;
+	std::vector<int> v = {1,2,3,4,5,6,7,8,9};
+	std::thread t1(thread_func, std::ref(v), std::ref(acm1), 0, v.size() / 2);
+	std::thread t2(thread_func, std::ref(v), std::ref(acm2), v.size() / 2, v.size());
+	t1.join();
+	t2.join();
+	std::cout << acm1 << "+" << acm2 << "=" << acm1 + acm2 << std::endl;
+	return 0;
+	MyRValue rv("Hello World");
+	std::vector<MyRValue> lrv;
+	lrv.push_back(std::move(rv));
+
+	return 0;
 	std::locale global(std::locale(""));
 	boost::filesystem::path p(R"(D:\Test\C-Demo\BoostTest/test.txt)");
 	//boost::filesystem::path p("./test.txt");
